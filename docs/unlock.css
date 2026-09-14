@@ -1,0 +1,115 @@
+.locked > .wrap {
+  visibility: hidden;
+}
+
+.unlock-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 20% 10%, rgba(199, 255, 74, 0.13), transparent 30rem),
+    #101210;
+  color: #f2f3eb;
+  font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.unlock-card {
+  width: min(430px, 100%);
+  padding: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 28px;
+  background: #1a1d19;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.35);
+}
+
+.unlock-mark {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: #c7ff4a;
+  color: #17200b;
+  font-size: 18px;
+  font-weight: 900;
+  transform: rotate(-4deg);
+}
+
+.unlock-card h1 {
+  margin: 24px 0 8px;
+  font-size: 34px;
+  line-height: 1;
+  letter-spacing: -0.045em;
+}
+
+.unlock-card p {
+  margin: 0 0 24px;
+  color: #aeb3a8;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.unlock-card label {
+  display: block;
+  margin-bottom: 7px;
+  color: #d6d9d0;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.unlock-row {
+  display: flex;
+  gap: 8px;
+}
+
+.unlock-row input {
+  min-width: 0;
+  flex: 1;
+  padding: 13px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  outline: none;
+  background: #11130f;
+  color: #fff;
+  font: inherit;
+}
+
+.unlock-row input:focus {
+  border-color: #c7ff4a;
+  box-shadow: 0 0 0 3px rgba(199, 255, 74, 0.12);
+}
+
+.unlock-row button {
+  padding: 0 17px;
+  border: 0;
+  border-radius: 12px;
+  background: #c7ff4a;
+  color: #17200b;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.unlock-row button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.unlock-error {
+  min-height: 18px;
+  margin-top: 10px;
+  color: #ff8d80;
+  font-size: 11px;
+}
+
+.unlock-privacy {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.09);
+  color: #7d8277;
+  font-size: 10px;
+  line-height: 1.5;
+}

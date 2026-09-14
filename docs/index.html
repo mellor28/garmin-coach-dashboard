@@ -1,0 +1,801 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#101210">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Run Atlas">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="unlock.css">
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Run Atlas</title>
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f2f0e9;
+    --surface: #fffef9;
+    --surface-2: #e9e6dc;
+    --ink: #151712;
+    --muted: #696c63;
+    --faint: #96998f;
+    --line: rgba(21, 23, 18, .12);
+    --hero: #171b16;
+    --hero-ink: #f7f7ef;
+    --lime: #c7ff4a;
+    --blue: #527dff;
+    --teal: #1aa87d;
+    --orange: #ef7e42;
+    --rose: #d75b67;
+    --violet: #9c78ff;
+    --shadow: 0 22px 65px rgba(31, 34, 27, .09);
+    --radius: 22px;
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #101210;
+    --surface: #1a1d19;
+    --surface-2: #252920;
+    --ink: #f2f3eb;
+    --muted: #b1b5aa;
+    --faint: #7d8277;
+    --line: rgba(255, 255, 255, .11);
+    --hero: #e9eee2;
+    --hero-ink: #111510;
+    --lime: #b6ed3f;
+    --blue: #7898ff;
+    --teal: #41c99d;
+    --orange: #ff9864;
+    --rose: #f17a86;
+    --violet: #b59aff;
+    --shadow: 0 24px 70px rgba(0, 0, 0, .28);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) {
+      color-scheme: dark;
+      --page: #101210;
+      --surface: #1a1d19;
+      --surface-2: #252920;
+      --ink: #f2f3eb;
+      --muted: #b1b5aa;
+      --faint: #7d8277;
+      --line: rgba(255, 255, 255, .11);
+      --hero: #e9eee2;
+      --hero-ink: #111510;
+      --lime: #b6ed3f;
+      --blue: #7898ff;
+      --teal: #41c99d;
+      --orange: #ff9864;
+      --rose: #f17a86;
+      --violet: #b59aff;
+      --shadow: 0 24px 70px rgba(0, 0, 0, .28);
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    padding: 0 20px 76px;
+    background:
+      radial-gradient(circle at 7% -4%, color-mix(in srgb, var(--lime) 13%, transparent), transparent 30rem),
+      var(--page);
+    color: var(--ink);
+    font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  button { font: inherit; }
+  .wrap { width: min(1200px, 100%); margin: 0 auto; }
+  .mono { font-variant-numeric: tabular-nums; }
+
+  header { min-height: 92px; display: flex; align-items: center; gap: 14px; }
+  .brand { display: flex; align-items: center; gap: 11px; font-size: 14px; font-weight: 760; }
+  .brand-mark {
+    width: 31px; height: 31px; display: grid; place-items: center; border-radius: 9px;
+    background: var(--ink); color: var(--page); font-size: 10px; letter-spacing: -.04em;
+    transform: rotate(-4deg);
+  }
+  .updated { color: var(--faint); font-size: 11px; }
+  .spacer { flex: 1; }
+  .theme-btn {
+    padding: 8px 13px; border: 1px solid var(--line); border-radius: 999px;
+    color: var(--ink); background: color-mix(in srgb, var(--surface) 82%, transparent); cursor: pointer;
+  }
+
+  .hero {
+    position: relative; overflow: hidden; padding: clamp(26px, 5vw, 58px);
+    background: var(--hero); color: var(--hero-ink); border-radius: 34px; box-shadow: var(--shadow);
+  }
+  .hero::after {
+    content: ""; position: absolute; width: 480px; height: 480px; border-radius: 50%;
+    right: -170px; top: -250px; background: var(--lime); opacity: .13;
+  }
+  .periods { position: relative; z-index: 2; display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 48px; }
+  .periods button {
+    border: 1px solid color-mix(in srgb, var(--hero-ink) 18%, transparent);
+    border-radius: 999px; padding: 8px 12px; color: color-mix(in srgb, var(--hero-ink) 64%, transparent);
+    background: transparent; font-size: 11px; cursor: pointer;
+  }
+  .periods button.active { color: #17200b; background: var(--lime); border-color: var(--lime); font-weight: 760; }
+  .hero-grid { position: relative; z-index: 1; display: grid; grid-template-columns: 1.25fr .75fr; gap: 50px; align-items: end; }
+  .hero-eyebrow { color: color-mix(in srgb, var(--hero-ink) 56%, transparent); font-size: 11px; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; }
+  .distance {
+    display: flex; align-items: end; gap: 12px; margin: 12px 0 16px;
+    font-size: clamp(86px, 15vw, 168px); line-height: .72; font-weight: 790; letter-spacing: -.085em;
+  }
+  .distance span { padding-bottom: .08em; font-size: clamp(18px, 2.5vw, 30px); letter-spacing: 0; color: color-mix(in srgb, var(--hero-ink) 62%, transparent); }
+  .hero-summary { color: color-mix(in srgb, var(--hero-ink) 68%, transparent); font-size: 13px; }
+  .hero-aside {
+    padding: 20px; border: 1px solid color-mix(in srgb, var(--hero-ink) 15%, transparent);
+    border-radius: 20px; background: color-mix(in srgb, var(--hero-ink) 5%, transparent);
+  }
+  .aside-label { color: color-mix(in srgb, var(--hero-ink) 50%, transparent); font-size: 10px; letter-spacing: .09em; text-transform: uppercase; }
+  .aside-value { margin: 8px 0 5px; font-size: 26px; font-weight: 720; letter-spacing: -.035em; }
+  .aside-sub { color: color-mix(in srgb, var(--hero-ink) 58%, transparent); font-size: 11px; line-height: 1.5; }
+  .hero-stats {
+    position: relative; z-index: 1; display: grid; grid-template-columns: repeat(5, 1fr);
+    margin-top: 44px; padding-top: 22px; border-top: 1px solid color-mix(in srgb, var(--hero-ink) 15%, transparent);
+  }
+  .hero-stat { padding-right: 14px; }
+  .hero-stat .label { color: color-mix(in srgb, var(--hero-ink) 46%, transparent); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; }
+  .hero-stat .value { margin-top: 5px; font-size: clamp(17px, 2vw, 23px); font-weight: 680; letter-spacing: -.02em; }
+  .hero-stat .sub { margin-top: 3px; color: color-mix(in srgb, var(--hero-ink) 42%, transparent); font-size: 9px; }
+
+  .section { margin-top: 54px; }
+  .section-head { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-bottom: 16px; }
+  .kicker { color: var(--blue); font-size: 10px; font-weight: 820; letter-spacing: .11em; text-transform: uppercase; }
+  h2 { margin: 5px 0 0; font-size: clamp(25px, 3vw, 35px); line-height: 1; letter-spacing: -.045em; }
+  .section-note { max-width: 48ch; color: var(--muted); font-size: 11px; line-height: 1.5; text-align: right; }
+  .card { padding: 22px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+  .card-title { font-size: 14px; font-weight: 740; letter-spacing: -.02em; }
+  .card-sub { margin-top: 4px; color: var(--muted); font-size: 11px; line-height: 1.5; }
+  .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+
+  .chart { display: block; width: 100%; height: auto; margin-top: 17px; overflow: visible; }
+  .grid-line { stroke: var(--line); stroke-width: 1; }
+  .axis-label { fill: var(--faint); font-size: 9px; }
+  .trend-line { fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-width: 3; }
+  .chart-caption { display: flex; justify-content: space-between; gap: 12px; margin-top: 7px; color: var(--muted); font-size: 10px; }
+
+  .zone-track { display: flex; gap: 3px; height: 16px; margin: 28px 0 18px; border-radius: 999px; overflow: hidden; background: var(--surface-2); }
+  .zone-segment { min-width: 2px; height: 100%; }
+  .zone-legend { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .zone-item { font-size: 10px; color: var(--muted); }
+  .zone-item strong { display: block; margin-bottom: 3px; color: var(--ink); font-size: 18px; }
+  .swatch { display: inline-block; width: 7px; height: 7px; margin-right: 5px; border-radius: 2px; }
+
+  .latest-card {
+    display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 38px;
+    color: var(--hero-ink); background: var(--hero);
+  }
+  .latest-card .kicker { color: var(--lime); }
+  .latest-distance { margin: 18px 0 3px; font-size: 56px; font-weight: 760; letter-spacing: -.065em; }
+  .latest-distance span { font-size: 15px; letter-spacing: 0; color: color-mix(in srgb, var(--hero-ink) 55%, transparent); }
+  .latest-title { color: color-mix(in srgb, var(--hero-ink) 62%, transparent); font-size: 12px; }
+  .latest-stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px 12px; margin-top: 28px; }
+  .latest-stat .label { color: color-mix(in srgb, var(--hero-ink) 43%, transparent); font-size: 9px; text-transform: uppercase; letter-spacing: .08em; }
+  .latest-stat .value { margin-top: 3px; font-size: 18px; font-weight: 670; }
+  .read-card { padding: 18px; border-radius: 16px; background: color-mix(in srgb, var(--hero-ink) 7%, transparent); }
+  .read-label { color: var(--lime); font-size: 9px; font-weight: 820; letter-spacing: .09em; text-transform: uppercase; }
+  .read-text { margin-top: 8px; color: color-mix(in srgb, var(--hero-ink) 78%, transparent); font-size: 12px; line-height: 1.6; }
+  .economy-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px; }
+  .economy {
+    min-height: 100px; padding: 13px; border-radius: 14px;
+    border: 1px solid color-mix(in srgb, var(--hero-ink) 12%, transparent);
+  }
+  .economy .label { color: color-mix(in srgb, var(--hero-ink) 45%, transparent); font-size: 9px; }
+  .economy .value { margin-top: 8px; font-size: 22px; font-weight: 690; }
+  .economy .value span { font-size: 10px; color: color-mix(in srgb, var(--hero-ink) 48%, transparent); }
+  .economy .delta { margin-top: 4px; color: color-mix(in srgb, var(--hero-ink) 50%, transparent); font-size: 9px; }
+  .economy .delta.good { color: var(--lime); }
+  .economy .delta.watch { color: var(--orange); }
+
+  .recovery-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
+  .recovery-card { min-height: 152px; padding: 16px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); }
+  .recovery-label { min-height: 28px; color: var(--muted); font-size: 10px; line-height: 1.35; }
+  .recovery-value { margin-top: 11px; font-size: 28px; font-weight: 730; letter-spacing: -.045em; }
+  .recovery-value span { font-size: 10px; color: var(--muted); letter-spacing: 0; }
+  .recovery-sub { margin-top: 5px; color: var(--faint); font-size: 9px; line-height: 1.4; }
+  .mini-bars { display: flex; align-items: end; gap: 3px; height: 27px; margin-top: 14px; }
+  .mini-bars i { flex: 1; min-width: 2px; border-radius: 2px 2px 0 0; background: var(--blue); opacity: .65; }
+  .empty-value { color: var(--faint); }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 11px; }
+  th, td { padding: 12px 9px; border-bottom: 1px solid var(--line); white-space: nowrap; text-align: left; }
+  th { color: var(--faint); font-size: 8px; font-weight: 780; letter-spacing: .08em; text-transform: uppercase; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tbody tr:first-child { background: color-mix(in srgb, var(--lime) 11%, transparent); }
+  tbody tr:last-child td { border-bottom: 0; }
+  .latest-tag { margin-left: 5px; color: var(--teal); font-size: 8px; font-weight: 800; text-transform: uppercase; }
+
+  footer { display: flex; justify-content: space-between; gap: 20px; margin-top: 50px; color: var(--faint); font-size: 9px; line-height: 1.5; }
+
+  @media (max-width: 900px) {
+    .hero-grid, .latest-card { grid-template-columns: 1fr; }
+    .hero-aside { max-width: 520px; }
+    .recovery-grid { grid-template-columns: repeat(3, 1fr); }
+    .economy-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 700px) {
+    .hero-stats { grid-template-columns: repeat(3, 1fr); row-gap: 20px; }
+    .grid-2 { grid-template-columns: 1fr; }
+    .section-head { flex-direction: column; align-items: start; }
+    .section-note { text-align: left; }
+  }
+  @media (max-width: 520px) {
+    body { padding: 0 12px 50px; }
+    header { min-height: 76px; }
+    .updated { display: none; }
+    .hero { padding: 24px 20px; border-radius: 24px; }
+    .periods { margin-bottom: 38px; }
+    .distance { font-size: 86px; }
+    .hero-stats { grid-template-columns: repeat(2, 1fr); }
+    .recovery-grid { grid-template-columns: repeat(2, 1fr); }
+    .economy-grid { grid-template-columns: 1fr; }
+    footer { flex-direction: column; }
+  }
+</style>
+</head>
+<body class="locked">
+<div class="unlock-screen" id="unlock-screen">
+  <main class="unlock-card">
+    <div class="unlock-mark">RA</div>
+    <h1>Unlock Run Atlas</h1>
+    <p>Your Garmin data is encrypted. It will be decrypted only inside this browser.</p>
+    <form id="unlock-form">
+      <label for="unlock-password">Dashboard password</label>
+      <div class="unlock-row">
+        <input id="unlock-password" type="password" autocomplete="current-password"
+               autocapitalize="none" spellcheck="false" required>
+        <button id="unlock-submit" type="submit">Unlock</button>
+      </div>
+      <div class="unlock-error" id="unlock-error" role="alert" aria-live="polite"></div>
+    </form>
+    <div class="unlock-privacy">
+      The password and decrypted data never leave this device. Safari can save
+      the password in iCloud Keychain for Face ID-assisted access.
+    </div>
+  </main>
+</div>
+
+<div class="wrap">
+  <header>
+    <div class="brand"><span class="brand-mark">RA</span> Run Atlas</div>
+    <span class="updated" id="updated"></span>
+    <span class="spacer"></span>
+    <button class="theme-btn" id="theme-btn" type="button" aria-label="Toggle color theme">Theme</button>
+  </header>
+
+  <main>
+    <section class="hero" aria-labelledby="hero-label">
+      <div class="periods" aria-label="Dashboard period">
+        <button type="button" data-period="week">This week</button>
+        <button type="button" data-period="30d" class="active">Last 30 days</button>
+        <button type="button" data-period="block">Current block</button>
+      </div>
+      <div class="hero-grid">
+        <div>
+          <div class="hero-eyebrow" id="hero-label">Rolling 30 days</div>
+          <div class="distance mono"><b id="hero-km">–</b><span>km</span></div>
+          <div class="hero-summary" id="hero-summary"></div>
+        </div>
+        <div class="hero-aside">
+          <div class="aside-label">Rhythm of the period</div>
+          <div class="aside-value mono" id="weekly-rate">–</div>
+          <div class="aside-sub" id="period-note"></div>
+        </div>
+      </div>
+      <div class="hero-stats" id="hero-stats"></div>
+    </section>
+
+    <section class="section" aria-labelledby="momentum-title">
+      <div class="section-head">
+        <div><div class="kicker">Volume & effort</div><h2 id="momentum-title">Training rhythm</h2></div>
+        <div class="section-note">A descriptive view of what happened—distance, frequency and effort distribution—with no goal or target imposed.</div>
+      </div>
+      <div class="grid-2">
+        <article class="card">
+          <div class="card-title">Weekly distance</div>
+          <div class="card-sub">The last twelve weeks of your current continuous running block.</div>
+          <div id="weekly-chart"></div>
+        </article>
+        <article class="card">
+          <div class="card-title">Heart-rate zone mix</div>
+          <div class="card-sub" id="zone-sub">Time spent at each effort level in the selected period.</div>
+          <div id="zones"></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="latest-title">
+      <div class="section-head">
+        <div><div class="kicker">Most recent activity</div><h2 id="latest-title">Latest run</h2></div>
+        <div class="section-note">Cadence and form remain visible here, interpreted alongside speed and cardiovascular cost rather than used as a standalone score.</div>
+      </div>
+      <article class="card latest-card">
+        <div>
+          <div class="kicker" id="latest-date"></div>
+          <div class="latest-distance mono"><b id="latest-km">–</b><span> km</span></div>
+          <div class="latest-title" id="latest-name"></div>
+          <div class="latest-stat-grid" id="latest-stats"></div>
+        </div>
+        <div>
+          <div class="read-card">
+            <div class="read-label">The useful read</div>
+            <div class="read-text" id="coach-read"></div>
+          </div>
+          <div class="economy-grid" id="economy-grid"></div>
+        </div>
+      </article>
+    </section>
+
+    <section class="section" aria-labelledby="recovery-title">
+      <div class="section-head">
+        <div><div class="kicker">Daily Garmin signals</div><h2 id="recovery-title">Recovery window</h2></div>
+        <div class="section-note" id="recovery-note">Latest available reading with a seven-day mini history. Missing device metrics stay blank instead of being guessed.</div>
+      </div>
+      <div class="recovery-grid" id="recovery-grid"></div>
+    </section>
+
+    <section class="section" aria-labelledby="form-title">
+      <div class="section-head">
+        <div><div class="kicker">Running economy</div><h2 id="form-title">Form over time</h2></div>
+        <div class="section-note">Block-scoped trends make changes visible without projecting them into unsupported future outcomes.</div>
+      </div>
+      <div class="grid-2">
+        <article class="card">
+          <div class="card-title">Cadence progression</div>
+          <div class="card-sub">Steps per minute on each eligible run. Latest: <strong id="cadence-latest"></strong></div>
+          <div id="cadence-chart"></div>
+        </article>
+        <article class="card">
+          <div class="card-title">Aerobic efficiency</div>
+          <div class="card-sub">Metres travelled per heartbeat. Higher means more ground for the same cardiovascular cost.</div>
+          <div id="efficiency-chart"></div>
+        </article>
+      </div>
+      <article class="card" style="margin-top:12px">
+        <div class="card-title">Cadence inside the latest run</div>
+        <div class="card-sub">Lap-by-lap turnover reveals late-run drift hidden by the activity average.</div>
+        <div id="lap-chart"></div>
+      </article>
+    </section>
+
+    <section class="section" aria-labelledby="log-title">
+      <div class="section-head">
+        <div><div class="kicker">Selected period</div><h2 id="log-title">Run log</h2></div>
+        <div class="section-note" id="log-note"></div>
+      </div>
+      <div class="card table-wrap">
+        <table>
+          <thead><tr>
+            <th>Date</th><th class="num">Distance</th><th class="num">Time</th><th class="num">Pace</th>
+            <th class="num">HR</th><th class="num">Cadence</th><th class="num">Power</th>
+            <th class="num">Vert. ratio</th><th class="num">Load</th>
+          </tr></thead>
+          <tbody id="log-body"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span>Personal Garmin dashboard · generated locally · no AI required</span>
+    <span>Compare form metrics at similar pace and terrain; no single number defines running economy.</span>
+  </footer>
+</div>
+
+<script id="dashboard-data" type="application/json"></script>
+<script>
+function startDashboard(DATA) {
+  const SNAP = DATA.snapshot;
+  const LATEST = SNAP.run;
+  const ANCHOR = new Date(LATEST.datetime);
+  let activePeriod = '30d';
+
+  const $ = id => document.getElementById(id);
+  const sum = (rows, fn) => rows.reduce((total, row) => total + (fn(row) || 0), 0);
+  const average = values => values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
+  function el(tag, cls, value) {
+    const node = document.createElement(tag);
+    if (cls) node.className = cls;
+    if (value != null) node.textContent = value;
+    return node;
+  }
+  function fmtPace(value) {
+    if (value == null) return '–';
+    let minutes = Math.floor(value), seconds = Math.round((value - minutes) * 60);
+    if (seconds === 60) { minutes += 1; seconds = 0; }
+    return minutes + ':' + String(seconds).padStart(2, '0');
+  }
+  function fmtDuration(minutes) {
+    if (minutes == null) return '–';
+    const hours = Math.floor(minutes / 60), mins = Math.round(minutes % 60);
+    return hours ? `${hours}h ${mins}m` : `${mins}m`;
+  }
+  function signed(value, digits) {
+    if (value == null) return '–';
+    return (value > 0 ? '+' : '') + value.toFixed(digits);
+  }
+  function shortDate(value) {
+    return new Date(value + 'T12:00:00').toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+  }
+  function monday(date) {
+    const result = new Date(date);
+    result.setHours(0, 0, 0, 0);
+    result.setDate(result.getDate() - ((result.getDay() + 6) % 7));
+    return result;
+  }
+  function periodRuns(key) {
+    if (key === 'block') return DATA.runs.filter(run => run.in_block);
+    const start = key === 'week' ? monday(ANCHOR) : new Date(ANCHOR.getTime() - 30 * 86400000);
+    return DATA.runs.filter(run => {
+      const time = new Date(run.datetime);
+      return time >= start && time <= ANCHOR;
+    });
+  }
+  function weighted(rows, field, weight) {
+    const valid = rows.filter(row => row[field] != null && row[weight] > 0);
+    const denominator = sum(valid, row => row[weight]);
+    return denominator ? sum(valid, row => row[field] * row[weight]) / denominator : null;
+  }
+  function aggregate(rows, key) {
+    const km = sum(rows, row => row.dist_km);
+    const minutes = sum(rows, row => row.dur_min);
+    const comparable = rows.filter(row => row.trend_eligible);
+    const dates = rows.map(row => new Date(row.datetime));
+    let spanDays = key === 'week' ? 7 : key === '30d' ? 30 : dates.length
+      ? Math.max(7, (Math.max(...dates) - Math.min(...dates)) / 86400000 + 1) : 7;
+    const zones = [0, 0, 0, 0, 0];
+    rows.forEach(row => (row.hr_zones || []).forEach((value, i) => zones[i] += value || 0));
+    return {
+      km, minutes, count: rows.length, zones,
+      longest: rows.length ? Math.max(...rows.map(row => row.dist_km)) : 0,
+      cadence: weighted(comparable, 'cadence', 'dur_min'),
+      pace: weighted(comparable, 'pace', 'dist_km'),
+      hr: weighted(comparable, 'avg_hr', 'dur_min'),
+      elevation: sum(rows, row => row.elev_gain),
+      load: sum(rows, row => row.training_load),
+      weeklyRate: km / spanDays * 7
+    };
+  }
+
+  function renderHero() {
+    const rows = periodRuns(activePeriod);
+    const stats = aggregate(rows, activePeriod);
+    const labels = {
+      week: `Week of ${shortDate(monday(ANCHOR).toISOString().slice(0, 10))}`,
+      '30d': `Rolling 30 days ending ${shortDate(LATEST.date)}`,
+      block: `Current block since ${shortDate(DATA.block_start)}`
+    };
+    $('hero-label').textContent = labels[activePeriod];
+    $('hero-km').textContent = stats.km.toFixed(1);
+    $('hero-summary').textContent = `${stats.count} runs · ${fmtDuration(stats.minutes)} moving · longest ${stats.longest.toFixed(1)} km`;
+    $('weekly-rate').textContent = stats.weeklyRate.toFixed(1) + ' km / week';
+    $('period-note').textContent = activePeriod === 'week'
+      ? 'Calendar week, Monday through the latest recorded activity.'
+      : activePeriod === '30d'
+        ? 'Rolling average across the selected 30-day window.'
+        : `${DATA.block_run_count} runs without a break longer than 60 days.`;
+
+    const heroStats = $('hero-stats');
+    heroStats.innerHTML = '';
+    [
+      ['Cadence', stats.cadence != null ? stats.cadence.toFixed(0) + ' spm' : '–', `latest ${LATEST.cadence ? LATEST.cadence.toFixed(1) : '–'}`],
+      ['Average pace', stats.pace != null ? fmtPace(stats.pace) + '/km' : '–', 'distance-weighted'],
+      ['Average HR', stats.hr != null ? stats.hr.toFixed(0) + ' bpm' : '–', 'time-weighted'],
+      ['Elevation', stats.elevation ? Math.round(stats.elevation) + ' m' : '–', 'total ascent'],
+      ['Training load', stats.load ? Math.round(stats.load).toLocaleString() : '–', 'Garmin total']
+    ].forEach(([label, value, sub]) => {
+      const box = el('div', 'hero-stat');
+      box.appendChild(el('div', 'label', label));
+      box.appendChild(el('div', 'value mono', value));
+      box.appendChild(el('div', 'sub', sub));
+      heroStats.appendChild(box);
+    });
+    renderZones(stats.zones);
+    renderLog(rows);
+  }
+
+  function renderWeekly() {
+    const weekly = DATA.weekly.filter(week => week.week >= DATA.block_start).slice(-12);
+    const host = $('weekly-chart');
+    if (!weekly.length) return;
+    const W = 560, H = 225, left = 34, right = 10, top = 20, bottom = 28;
+    const max = Math.max(...weekly.map(week => week.km), 1) * 1.12;
+    const slot = (W - left - right) / weekly.length;
+    const y = value => top + (max - value) / max * (H - top - bottom);
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('class', 'chart');
+    svg.setAttribute('role', 'img'); svg.setAttribute('aria-label', 'Weekly running distance');
+    [0, .5, 1].forEach(ratio => {
+      const gy = top + ratio * (H - top - bottom);
+      const line = document.createElementNS(svg.namespaceURI, 'line');
+      [['x1', left], ['x2', W - right], ['y1', gy], ['y2', gy], ['class', 'grid-line']].forEach(([k, v]) => line.setAttribute(k, v));
+      svg.appendChild(line);
+      const label = document.createElementNS(svg.namespaceURI, 'text');
+      label.setAttribute('x', 0); label.setAttribute('y', gy + 3); label.setAttribute('class', 'axis-label');
+      label.textContent = (max - ratio * max).toFixed(0); svg.appendChild(label);
+    });
+    weekly.forEach((week, i) => {
+      const bar = document.createElementNS(svg.namespaceURI, 'rect');
+      const x = left + i * slot + slot * .16, width = slot * .68;
+      bar.setAttribute('x', x); bar.setAttribute('y', y(week.km));
+      bar.setAttribute('width', width); bar.setAttribute('height', Math.max(1, H - bottom - y(week.km)));
+      bar.setAttribute('rx', 4); bar.setAttribute('fill', i === weekly.length - 1 ? 'var(--lime)' : 'var(--blue)');
+      svg.appendChild(bar);
+      if (i % 2 === 0 || i === weekly.length - 1) {
+        const label = document.createElementNS(svg.namespaceURI, 'text');
+        label.setAttribute('x', x + width / 2); label.setAttribute('y', H - 6);
+        label.setAttribute('text-anchor', 'middle'); label.setAttribute('class', 'axis-label');
+        label.textContent = week.week.slice(5); svg.appendChild(label);
+      }
+    });
+    host.appendChild(svg);
+    const caption = el('div', 'chart-caption');
+    caption.appendChild(el('span', null, weekly.length + ' weeks shown'));
+    caption.appendChild(el('span', 'mono', 'Latest ' + weekly[weekly.length - 1].km.toFixed(1) + ' km'));
+    host.appendChild(caption);
+  }
+
+  function renderZones(zones) {
+    const host = $('zones'); host.innerHTML = '';
+    const bands = [zones[0] + zones[1], zones[2], zones[3] + zones[4]];
+    const total = bands.reduce((a, b) => a + b, 0);
+    if (!total) {
+      host.appendChild(el('div', 'card-sub', 'No heart-rate zone data in this period.'));
+      return;
+    }
+    const colors = ['var(--teal)', 'var(--orange)', 'var(--rose)'];
+    const labels = ['Easy · Z1–2', 'Moderate · Z3', 'Hard · Z4–5'];
+    const track = el('div', 'zone-track');
+    bands.forEach((value, i) => {
+      const segment = el('span', 'zone-segment');
+      segment.style.width = (100 * value / total) + '%'; segment.style.background = colors[i];
+      track.appendChild(segment);
+    });
+    host.appendChild(track);
+    const legend = el('div', 'zone-legend');
+    bands.forEach((value, i) => {
+      const item = el('div', 'zone-item');
+      item.appendChild(el('strong', 'mono', (100 * value / total).toFixed(0) + '%'));
+      const swatch = el('span', 'swatch'); swatch.style.background = colors[i]; item.appendChild(swatch);
+      item.appendChild(document.createTextNode(labels[i])); legend.appendChild(item);
+    });
+    host.appendChild(legend);
+  }
+
+  function buildCoachRead() {
+    const efficiency = SNAP.economy.find(metric => metric.field === 'efficiency');
+    const cadenceDelta = SNAP.cadence.delta;
+    const previous = SNAP.previous_run;
+    const paceDelta = previous && previous.pace && LATEST.pace ? LATEST.pace - previous.pace : null;
+    let opening;
+    if (cadenceDelta != null && cadenceDelta > 2 && efficiency && efficiency.delta < 0) {
+      opening = `Cadence was ${cadenceDelta.toFixed(1)} spm above the recent baseline, while aerobic efficiency was ${Math.abs(efficiency.delta).toFixed(2)} m/beat lower.`;
+    } else if (cadenceDelta != null && efficiency && cadenceDelta > 1 && efficiency.delta > 0) {
+      opening = 'Cadence and aerobic efficiency both moved up against their recent baselines.';
+    } else {
+      opening = `Cadence was ${Math.abs(cadenceDelta || 0).toFixed(1)} spm ${cadenceDelta >= 0 ? 'above' : 'below'} the recent baseline.`;
+    }
+    const pace = paceDelta != null ? ` Pace was ${Math.abs(paceDelta * 60).toFixed(0)} sec/km ${paceDelta > 0 ? 'slower' : 'faster'} than the prior run.` : '';
+    const finish = LATEST.decoupling != null ? ` Back-half pace change: ${signed(LATEST.decoupling, 1)}%.` : '';
+    return opening + pace + ' Read these together rather than chasing turnover alone.' + finish;
+  }
+
+  function renderLatest() {
+    $('latest-date').textContent = shortDate(LATEST.date);
+    $('latest-km').textContent = LATEST.dist_km.toFixed(2);
+    $('latest-name').textContent = (LATEST.name || 'Run') + ' · ' + (LATEST.te_label || 'running').replaceAll('_', ' ').toLowerCase();
+    const host = $('latest-stats');
+    [
+      ['Time', fmtDuration(LATEST.dur_min)],
+      ['Pace', LATEST.pace_str + '/km'],
+      ['Cadence', LATEST.cadence ? LATEST.cadence.toFixed(1) + ' spm' : '–'],
+      ['Average HR', LATEST.avg_hr ? LATEST.avg_hr.toFixed(0) + ' bpm' : '–']
+    ].forEach(([label, value]) => {
+      const item = el('div', 'latest-stat');
+      item.appendChild(el('div', 'label', label)); item.appendChild(el('div', 'value mono', value)); host.appendChild(item);
+    });
+    $('coach-read').textContent = buildCoachRead();
+    SNAP.economy.forEach(metric => {
+      const item = el('div', 'economy');
+      item.appendChild(el('div', 'label', metric.label));
+      const digits = metric.field === 'efficiency' ? 2 : ['gct', 'stride_len', 'avg_power'].includes(metric.field) ? 0 : 1;
+      const value = el('div', 'value mono', metric.value != null ? metric.value.toFixed(digits) : '–');
+      value.appendChild(el('span', null, ' ' + metric.unit)); item.appendChild(value);
+      let cls = 'delta', delta = 'No recent baseline';
+      if (metric.delta != null) {
+        delta = signed(metric.delta, digits) + ' vs previous 10';
+        if (metric.lower_better != null && metric.delta !== 0) {
+          const improved = metric.lower_better ? metric.delta < 0 : metric.delta > 0;
+          cls += improved ? ' good' : ' watch';
+        }
+      }
+      item.appendChild(el('div', cls, delta)); $('economy-grid').appendChild(item);
+    });
+  }
+
+  function latestWellness(field) {
+    return DATA.wellness.slice().reverse().find(day => day[field] != null);
+  }
+  function recentWellnessValues(field, count) {
+    return DATA.wellness.filter(day => day[field] != null).slice(-count).map(day => day[field]);
+  }
+  function renderRecovery() {
+    const configs = [
+      ['Sleep score', 'sleep_score', '', 'Garmin overnight score', 'var(--violet)'],
+      ['Sleep duration', 'sleep_hours', 'h', 'Total recorded sleep', 'var(--blue)'],
+      ['Body battery', 'body_battery', '', 'Latest daily level', 'var(--lime)'],
+      ['Resting HR', 'resting_hr', 'bpm', 'Daily resting pulse', 'var(--rose)'],
+      ['HRV', 'hrv', 'ms', 'Last-night average', 'var(--teal)'],
+      ['Readiness', 'readiness', '/100', 'Garmin training readiness', 'var(--orange)'],
+      ['Stress', 'stress', '', 'Average daily stress', 'var(--orange)'],
+      ['Steps', 'steps', '', 'Latest daily steps', 'var(--blue)'],
+      ['Respiration', 'respiration', 'brpm', 'Average during sleep', 'var(--teal)'],
+      ['SpO₂', 'spo2', '%', 'Average during sleep', 'var(--violet)']
+    ];
+    const available = configs.filter(config => latestWellness(config[1])).slice(0, 6);
+    const host = $('recovery-grid');
+    available.forEach(([label, field, unit, sub, color]) => {
+      const record = latestWellness(field);
+      const values = recentWellnessValues(field, 7);
+      const card = el('article', 'recovery-card');
+      card.appendChild(el('div', 'recovery-label', label));
+      const raw = record[field];
+      const formatted = field === 'steps' ? Math.round(raw).toLocaleString()
+        : field === 'sleep_hours' ? raw.toFixed(1)
+        : Number(raw).toFixed(field === 'respiration' || field === 'spo2' ? 1 : 0);
+      const value = el('div', 'recovery-value mono', formatted);
+      value.appendChild(el('span', null, unit ? ' ' + unit : '')); card.appendChild(value);
+      card.appendChild(el('div', 'recovery-sub', `${sub} · ${shortDate(record.date)}`));
+      const bars = el('div', 'mini-bars');
+      const min = Math.min(...values), max = Math.max(...values);
+      values.forEach(point => {
+        const bar = el('i'); bar.style.background = color;
+        bar.style.height = (7 + 20 * ((point - min) / (max - min || 1))) + 'px'; bars.appendChild(bar);
+      });
+      card.appendChild(bars); host.appendChild(card);
+    });
+    if (!available.length) host.appendChild(el('div', 'card empty-value', 'No recent wellness readings are available.'));
+  }
+
+  function renderTrend(hostId, field, digits, unit, color, aria) {
+    const host = $(hostId);
+    const rows = DATA.runs.filter(run => run.in_block && run.trend_eligible && run[field] != null).slice(-24);
+    if (rows.length < 2) { host.appendChild(el('div', 'card-sub', 'Not enough readings yet.')); return; }
+    const W = 560, H = 215, left = 36, right = 14, top = 20, bottom = 28;
+    const values = rows.map(run => run[field]);
+    let min = Math.min(...values), max = Math.max(...values), pad = (max - min || 1) * .18;
+    min -= pad; max += pad;
+    const x = i => left + i * ((W - left - right) / (rows.length - 1));
+    const y = value => top + (max - value) / (max - min) * (H - top - bottom);
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('class', 'chart');
+    svg.setAttribute('role', 'img'); svg.setAttribute('aria-label', aria);
+    [0, .5, 1].forEach(ratio => {
+      const gy = top + ratio * (H - top - bottom), line = document.createElementNS(svg.namespaceURI, 'line');
+      [['x1', left], ['x2', W-right], ['y1', gy], ['y2', gy], ['class', 'grid-line']].forEach(([k,v]) => line.setAttribute(k,v));
+      svg.appendChild(line);
+      const label = document.createElementNS(svg.namespaceURI, 'text');
+      label.setAttribute('x', 0); label.setAttribute('y', gy + 3); label.setAttribute('class', 'axis-label');
+      label.textContent = (max - ratio * (max - min)).toFixed(digits); svg.appendChild(label);
+    });
+    const path = document.createElementNS(svg.namespaceURI, 'path');
+    path.setAttribute('d', rows.map((row, i) => `${i ? 'L' : 'M'} ${x(i).toFixed(1)} ${y(row[field]).toFixed(1)}`).join(' '));
+    path.setAttribute('class', 'trend-line'); path.setAttribute('stroke', color); svg.appendChild(path);
+    rows.forEach((row, i) => {
+      const circle = document.createElementNS(svg.namespaceURI, 'circle');
+      circle.setAttribute('cx', x(i)); circle.setAttribute('cy', y(row[field]));
+      circle.setAttribute('r', i === rows.length - 1 ? 6 : 2.7);
+      circle.setAttribute('fill', i === rows.length - 1 ? 'var(--lime)' : color);
+      if (i === rows.length - 1) circle.setAttribute('stroke', 'var(--ink)');
+      svg.appendChild(circle);
+    });
+    host.appendChild(svg);
+    const caption = el('div', 'chart-caption');
+    caption.appendChild(el('span', null, `${rows.length} recent readings`));
+    caption.appendChild(el('span', 'mono', `Latest ${rows[rows.length-1][field].toFixed(digits)} ${unit}`));
+    host.appendChild(caption);
+  }
+
+  function renderLaps() {
+    const host = $('lap-chart'), laps = (LATEST.laps || []).filter(lap => lap.cadence != null);
+    if (laps.length < 2) { host.appendChild(el('div', 'card-sub', 'No lap-level cadence recorded.')); return; }
+    const W = 1120, H = 215, left = 38, right = 12, top = 22, bottom = 28;
+    const values = laps.map(lap => lap.cadence), min = Math.min(...values) - 3, max = Math.max(...values) + 3;
+    const x = i => left + i * ((W-left-right)/(laps.length-1)), y = v => top + (max-v)/(max-min)*(H-top-bottom);
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('class', 'chart');
+    svg.setAttribute('role', 'img'); svg.setAttribute('aria-label', 'Latest run cadence by lap');
+    [0,.5,1].forEach(ratio => {
+      const gy = top + ratio*(H-top-bottom), line = document.createElementNS(svg.namespaceURI,'line');
+      [['x1',left],['x2',W-right],['y1',gy],['y2',gy],['class','grid-line']].forEach(([k,v])=>line.setAttribute(k,v));
+      svg.appendChild(line);
+      const label = document.createElementNS(svg.namespaceURI,'text');
+      label.setAttribute('x',0); label.setAttribute('y',gy+3); label.setAttribute('class','axis-label');
+      label.textContent=(max-ratio*(max-min)).toFixed(0); svg.appendChild(label);
+    });
+    const path = document.createElementNS(svg.namespaceURI,'path');
+    path.setAttribute('d',laps.map((lap,i)=>`${i?'L':'M'} ${x(i)} ${y(lap.cadence)}`).join(' '));
+    path.setAttribute('class','trend-line'); path.setAttribute('stroke','var(--blue)'); svg.appendChild(path);
+    laps.forEach((lap,i)=>{
+      const dot=document.createElementNS(svg.namespaceURI,'circle');
+      dot.setAttribute('cx',x(i)); dot.setAttribute('cy',y(lap.cadence)); dot.setAttribute('r',4);
+      dot.setAttribute('fill','var(--surface)'); dot.setAttribute('stroke','var(--blue)'); dot.setAttribute('stroke-width',2); svg.appendChild(dot);
+      if (laps.length<=16 || i%2===0 || i===laps.length-1) {
+        const label=document.createElementNS(svg.namespaceURI,'text');
+        label.setAttribute('x',x(i)); label.setAttribute('y',H-5); label.setAttribute('text-anchor','middle'); label.setAttribute('class','axis-label');
+        label.textContent=lap.lap; svg.appendChild(label);
+      }
+    });
+    host.appendChild(svg);
+    const half=Math.floor(laps.length/2), first=average(laps.slice(0,half).map(l=>l.cadence)), second=average(laps.slice(half).map(l=>l.cadence));
+    const caption=el('div','chart-caption');
+    caption.appendChild(el('span',null,`First half ${first.toFixed(1)} spm`));
+    caption.appendChild(el('span','mono',`Back-half change ${signed(second-first,1)} spm`)); host.appendChild(caption);
+  }
+
+  function renderLog(rows) {
+    const host = $('log-body'); host.innerHTML = '';
+    const sorted = rows.slice().sort((a,b)=>b.datetime.localeCompare(a.datetime));
+    $('log-note').textContent = `${sorted.length} runs in the selected period.`;
+    sorted.forEach((run,index)=>{
+      const tr=document.createElement('tr'), date=el('td',null,shortDate(run.date));
+      if(run.datetime===LATEST.datetime) date.appendChild(el('span','latest-tag','latest'));
+      tr.appendChild(date);
+      [
+        run.dist_km.toFixed(1)+' km', fmtDuration(run.dur_min), run.pace_str+'/km',
+        run.avg_hr?run.avg_hr.toFixed(0):'–', run.cadence?run.cadence.toFixed(1):'–',
+        run.avg_power?run.avg_power.toFixed(0)+' W':'–', run.vert_ratio?run.vert_ratio.toFixed(1)+'%':'–',
+        run.training_load?run.training_load.toFixed(0):'–'
+      ].forEach(value=>tr.appendChild(el('td','num mono',value)));
+      host.appendChild(tr);
+    });
+  }
+
+  $('updated').textContent = `Data through ${shortDate(LATEST.date)} · ${DATA.runs.length} runs stored`;
+  renderWeekly();
+  renderLatest();
+  renderRecovery();
+  $('cadence-latest').textContent = LATEST.cadence ? LATEST.cadence.toFixed(1) + ' spm' : '–';
+  renderTrend('cadence-chart','cadence',0,'spm','var(--blue)','Cadence over the current block');
+  renderTrend('efficiency-chart','efficiency',2,'m/beat','var(--teal)','Aerobic efficiency over the current block');
+  renderLaps();
+  renderHero();
+
+  document.querySelectorAll('.periods button').forEach(button => button.addEventListener('click', () => {
+    activePeriod = button.dataset.period;
+    document.querySelectorAll('.periods button').forEach(item => item.classList.toggle('active', item === button));
+    renderHero();
+  }));
+
+  (function initTheme() {
+    const button = $('theme-btn');
+    let saved; try { saved = localStorage.getItem('run-atlas-theme'); } catch (error) {}
+    if (saved) document.documentElement.setAttribute('data-theme', saved);
+    button.addEventListener('click', () => {
+      const explicit = document.documentElement.getAttribute('data-theme');
+      const isDark = explicit ? explicit === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+      const next = isDark ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      button.setAttribute('aria-pressed', String(next === 'dark'));
+      try { localStorage.setItem('run-atlas-theme', next); } catch (error) {}
+    });
+  })();
+}
+
+window.startDashboard = startDashboard;
+const embeddedDashboardData = document.getElementById('dashboard-data').textContent.trim();
+if (embeddedDashboardData) {
+  startDashboard(JSON.parse(embeddedDashboardData));
+}
+</script>
+<script src="unlock.js"></script>
+</body>
+</html>

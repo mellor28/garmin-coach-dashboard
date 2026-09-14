@@ -1,0 +1,10 @@
+garmin_tokens/
+data/
+venv/
+.DS_Store
+__pycache__/
+.pycache/
+.tools/
+*.pyc
+dashboard.html
+.pages-config.json
