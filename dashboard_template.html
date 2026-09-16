@@ -158,6 +158,29 @@
   .zone-item strong { display: block; margin-bottom: 3px; color: var(--ink); font-size: 18px; }
   .swatch { display: inline-block; width: 7px; height: 7px; margin-right: 5px; border-radius: 2px; }
 
+  .vo2-card {
+    display: grid; grid-template-columns: minmax(280px, .75fr) minmax(0, 1.25fr);
+    gap: clamp(26px, 5vw, 64px); align-items: center; overflow: hidden;
+  }
+  .vo2-gauge-wrap { position: relative; width: min(330px, 100%); margin: 0 auto; }
+  .vo2-gauge { display: block; width: 100%; height: auto; overflow: visible; }
+  .vo2-gauge path { fill: none; stroke-width: 12; }
+  .vo2-marker { stroke: var(--surface); stroke-width: 4; }
+  .vo2-reading {
+    position: absolute; inset: 29% 0 auto; display: flex; flex-direction: column;
+    align-items: center; pointer-events: none;
+  }
+  .vo2-reading strong { font-size: 62px; line-height: 1; font-weight: 530; letter-spacing: -.055em; }
+  .vo2-reading span { margin-top: 12px; font-size: 18px; }
+  .vo2-title { display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: 12px; }
+  .vo2-title-mark { color: var(--teal); font-size: 18px; }
+  .vo2-context h3 { margin: 10px 0 8px; font-size: clamp(25px, 3vw, 36px); letter-spacing: -.045em; }
+  .vo2-copy { max-width: 58ch; color: var(--muted); font-size: 12px; line-height: 1.6; }
+  .vo2-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 24px; }
+  .vo2-fact { padding: 13px 14px; border-radius: 14px; background: var(--surface-2); }
+  .vo2-fact .label { color: var(--faint); font-size: 9px; letter-spacing: .07em; text-transform: uppercase; }
+  .vo2-fact .value { margin-top: 5px; font-size: 17px; font-weight: 690; letter-spacing: -.025em; }
+
   .latest-card {
     display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 38px;
     color: var(--hero-ink); background: var(--hero);
@@ -206,7 +229,7 @@
   footer { display: flex; justify-content: space-between; gap: 20px; margin-top: 50px; color: var(--faint); font-size: 9px; line-height: 1.5; }
 
   @media (max-width: 900px) {
-    .hero-grid, .latest-card { grid-template-columns: 1fr; }
+    .hero-grid, .vo2-card, .latest-card { grid-template-columns: 1fr; }
     .hero-aside { max-width: 520px; }
     .recovery-grid { grid-template-columns: repeat(3, 1fr); }
     .economy-grid { grid-template-columns: repeat(2, 1fr); }
@@ -279,6 +302,28 @@
           <div id="zones"></div>
         </article>
       </div>
+    </section>
+
+    <section class="section" aria-labelledby="vo2-title">
+      <div class="section-head">
+        <div><div class="kicker">Aerobic capacity</div><h2 id="vo2-title">Running VO₂ max</h2></div>
+        <div class="section-note">Garmin’s latest running estimate, refreshed with every sync and shown with its recent context.</div>
+      </div>
+      <article class="card vo2-card">
+        <div class="vo2-gauge-wrap">
+          <svg class="vo2-gauge" id="vo2-gauge" viewBox="0 0 300 250" role="img" aria-label="Running VO2 max gauge"></svg>
+          <div class="vo2-reading">
+            <strong class="mono" id="vo2-value">–</strong>
+            <span id="vo2-category"></span>
+          </div>
+        </div>
+        <div class="vo2-context">
+          <div class="vo2-title"><span class="vo2-title-mark">●</span> Latest Garmin running estimate</div>
+          <h3 id="vo2-headline">Aerobic capacity</h3>
+          <div class="vo2-copy" id="vo2-copy"></div>
+          <div class="vo2-facts" id="vo2-facts"></div>
+        </div>
+      </article>
     </section>
 
     <section class="section" aria-labelledby="latest-title">
@@ -539,6 +584,83 @@ function startDashboard(DATA) {
     host.appendChild(legend);
   }
 
+  function renderVo2() {
+    const history = (DATA.fitness && DATA.fitness.vo2_history) || [];
+    const status = DATA.training_status || {};
+    const latestHistory = history.length ? history[history.length - 1] : null;
+    const precise = Number(status.vo2max != null ? status.vo2max : latestHistory && latestHistory.v);
+    const gauge = $('vo2-gauge');
+
+    if (!Number.isFinite(precise)) {
+      $('vo2-value').textContent = '–';
+      $('vo2-category').textContent = 'Not available';
+      $('vo2-copy').textContent = 'Garmin has not supplied a running VO₂ max estimate yet.';
+      return;
+    }
+
+    const min = 25, max = 65, startAngle = 140, endAngle = 400;
+    const angleFor = value => startAngle + (endAngle - startAngle) *
+      ((Math.max(min, Math.min(max, value)) - min) / (max - min));
+    const point = angle => {
+      const radians = angle * Math.PI / 180;
+      return { x: 150 + 100 * Math.cos(radians), y: 130 + 100 * Math.sin(radians) };
+    };
+    const arc = (from, to) => {
+      const a = point(from), b = point(to);
+      return `M ${a.x.toFixed(2)} ${a.y.toFixed(2)} A 100 100 0 ${to - from > 180 ? 1 : 0} 1 ${b.x.toFixed(2)} ${b.y.toFixed(2)}`;
+    };
+    const ranges = [
+      [25, 35, 'var(--rose)'],
+      [35, 40, 'var(--orange)'],
+      [40, 45, 'var(--teal)'],
+      [45, 52, 'var(--blue)'],
+      [52, 65, 'var(--violet)']
+    ];
+    ranges.forEach(([from, to, color]) => {
+      const path = document.createElementNS(gauge.namespaceURI, 'path');
+      path.setAttribute('d', arc(angleFor(from) + 1.5, angleFor(to) - 1.5));
+      path.setAttribute('stroke', color);
+      path.setAttribute('stroke-linecap', 'butt');
+      gauge.appendChild(path);
+    });
+
+    const markerPoint = point(angleFor(precise));
+    const marker = document.createElementNS(gauge.namespaceURI, 'circle');
+    marker.setAttribute('cx', markerPoint.x);
+    marker.setAttribute('cy', markerPoint.y);
+    marker.setAttribute('r', 9);
+    marker.setAttribute('fill', 'var(--teal)');
+    marker.setAttribute('class', 'vo2-marker');
+    gauge.appendChild(marker);
+
+    const category = precise < 35 ? 'Low' : precise < 40 ? 'Fair'
+      : precise < 47 ? 'Good' : precise < 53 ? 'Excellent' : 'Superior';
+    $('vo2-value').textContent = Math.round(precise);
+    $('vo2-category').textContent = category;
+    $('vo2-headline').textContent = `${category} aerobic estimate`;
+    $('vo2-copy').textContent =
+      'VO₂ max estimates how much oxygen your body can use at hard running effort. Garmin recalculates it after qualifying activities, so this card follows the newest synced estimate automatically. Display bands are general context; Garmin’s exact classification can vary with profile and age.';
+
+    const first = history.length ? history[0].v : null;
+    const latestRunValue = latestHistory ? latestHistory.v : null;
+    const feedback = status.feedback
+      ? status.feedback.replace(/_\d+$/, '').replaceAll('_', ' ').toLowerCase()
+          .replace(/\b\w/g, letter => letter.toUpperCase())
+      : null;
+    const facts = [
+      ['Precise estimate', precise.toFixed(1)],
+      ['Latest run value', latestRunValue != null ? latestRunValue.toFixed(0) : '–'],
+      ['Current block change', first != null ? signed(precise - first, 1) : '–'],
+      ['Garmin status', feedback || 'Not available']
+    ];
+    facts.forEach(([label, value]) => {
+      const fact = el('div', 'vo2-fact');
+      fact.appendChild(el('div', 'label', label));
+      fact.appendChild(el('div', 'value mono', value));
+      $('vo2-facts').appendChild(fact);
+    });
+  }
+
   function buildCoachRead() {
     const efficiency = SNAP.economy.find(metric => metric.field === 'efficiency');
     const cadenceDelta = SNAP.cadence.delta;
@@ -730,6 +852,7 @@ function startDashboard(DATA) {
 
   $('updated').textContent = `Data through ${shortDate(LATEST.date)} · ${DATA.runs.length} runs stored`;
   renderWeekly();
+  renderVo2();
   renderLatest();
   renderRecovery();
   $('cadence-latest').textContent = LATEST.cadence ? LATEST.cadence.toFixed(1) + ' spm' : '–';

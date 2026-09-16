@@ -124,6 +124,8 @@ training snapshot with:
   training load.
 - **Training rhythm** -- weekly distance and the selected period's descriptive
   heart-rate zone distribution.
+- **Running VO2 max** -- Garmin's latest running estimate in a colored gauge,
+  with its precise value, current-block change, and training status.
 - **Latest run** -- pace and cadence context plus the watch's current running
   economy metrics such as vertical ratio, ground contact time, efficiency,
   stride length, and power.
