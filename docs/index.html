@@ -161,7 +161,10 @@
   .trend-line { fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-width: 3; }
   .chart-caption { display: flex; justify-content: space-between; gap: 12px; margin-top: 7px; color: var(--muted); font-size: 10px; }
 
-  .zone-track { display: flex; gap: 3px; height: 16px; margin: 28px 0 18px; border-radius: 999px; overflow: hidden; background: var(--surface-2); }
+  .easy-share { display: flex; align-items: end; gap: 12px; margin-top: 16px; }
+  .easy-share-value { font-size: clamp(48px, 6vw, 72px); line-height: .82; font-weight: 760; letter-spacing: -.06em; }
+  .easy-share-label { max-width: 18ch; padding-bottom: 6px; color: var(--muted); font-size: 12px; line-height: 1.35; }
+  .zone-track { display: flex; gap: 3px; height: 16px; margin: 18px 0 18px; border-radius: 999px; overflow: hidden; background: var(--surface-2); }
   .zone-segment { min-width: 2px; height: 100%; }
   .zone-legend { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
   .zone-item { font-size: 10px; color: var(--muted); }
@@ -233,8 +236,40 @@
   th { color: var(--faint); font-size: 8px; font-weight: 780; letter-spacing: .08em; text-transform: uppercase; }
   td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
   tbody tr:first-child { background: color-mix(in srgb, var(--lime) 11%, transparent); }
+  tbody tr.run-row { cursor: pointer; }
+  tbody tr.run-row:hover { background: color-mix(in srgb, var(--blue) 10%, transparent); }
+  tbody tr.run-row:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
   tbody tr:last-child td { border-bottom: 0; }
   .latest-tag { margin-left: 5px; color: var(--teal); font-size: 8px; font-weight: 800; text-transform: uppercase; }
+  .open-run {
+    margin-top: 16px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 999px;
+    background: var(--surface-2); color: var(--ink); cursor: pointer; font-size: 11px; font-weight: 700;
+  }
+  .run-sheet { position: fixed; inset: 0; z-index: 30; }
+  .run-sheet[hidden] { display: none; }
+  .run-sheet-backdrop { position: absolute; inset: 0; background: rgba(16, 18, 16, .55); }
+  .run-sheet-panel {
+    position: absolute; top: 0; right: 0; bottom: 0; width: min(760px, 100%);
+    overflow: auto; padding: 22px 22px 48px; background: var(--page); color: var(--ink);
+    box-shadow: var(--shadow);
+  }
+  .run-sheet-top { display: flex; justify-content: space-between; gap: 16px; align-items: start; }
+  .run-sheet-kicker { color: var(--blue); font-size: 10px; font-weight: 820; letter-spacing: .11em; text-transform: uppercase; }
+  .run-sheet-panel h3 { margin: 6px 0 0; font-size: clamp(28px, 4vw, 40px); letter-spacing: -.045em; }
+  .run-sheet-meta { margin-top: 8px; color: var(--muted); font-size: 13px; }
+  .run-close {
+    padding: 8px 12px; border: 1px solid var(--line); border-radius: 999px;
+    background: var(--surface); color: var(--ink); cursor: pointer;
+  }
+  .run-insight { margin: 22px 0; padding: 16px 18px; border-radius: 18px; background: var(--surface); border: 1px solid var(--line); font-size: 14px; line-height: 1.5; }
+  .run-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 8px; }
+  .run-fact { padding: 12px 14px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); }
+  .run-fact .label { color: var(--faint); font-size: 9px; letter-spacing: .07em; text-transform: uppercase; }
+  .run-fact .value { margin-top: 4px; font-size: 18px; font-weight: 700; }
+  .run-compare { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12px; }
+  .run-compare th, .run-compare td { padding: 8px 6px; border-bottom: 1px solid var(--line); text-align: left; }
+  .run-compare th { color: var(--faint); font-size: 9px; letter-spacing: .06em; text-transform: uppercase; }
+  .run-compare td.num, .run-compare th.num { text-align: right; }
 
   footer { display: flex; justify-content: space-between; gap: 20px; margin-top: 50px; color: var(--faint); font-size: 9px; line-height: 1.5; }
 
@@ -258,7 +293,7 @@
     .periods { margin-bottom: 38px; }
     .distance { font-size: 86px; }
     .hero-stats { grid-template-columns: repeat(2, 1fr); }
-    .recovery-grid { grid-template-columns: repeat(2, 1fr); }
+    .recovery-grid, .run-facts { grid-template-columns: repeat(2, 1fr); }
     .economy-grid { grid-template-columns: 1fr; }
     footer { flex-direction: column; }
   }
@@ -324,7 +359,7 @@
       <div class="grid-2">
         <article class="card">
           <div class="card-title">Weekly distance</div>
-          <div class="card-sub">The last twelve weeks of your current continuous running block.</div>
+          <div class="card-sub">Bar is the week’s total. The dot marks the longest run that week.</div>
           <div id="weekly-chart"></div>
         </article>
         <article class="card">
@@ -368,6 +403,7 @@
           <div class="latest-distance mono"><b id="latest-km">–</b><span> km</span></div>
           <div class="latest-title" id="latest-name"></div>
           <div class="latest-stat-grid" id="latest-stats"></div>
+          <button class="open-run" id="open-latest" type="button">Open this run</button>
         </div>
         <div>
           <div class="read-card">
@@ -405,16 +441,16 @@
         </article>
       </div>
       <article class="card" style="margin-top:12px">
-        <div class="card-title">Cadence inside the latest run</div>
-        <div class="card-sub">Lap-by-lap turnover reveals late-run drift hidden by the activity average.</div>
-        <div id="lap-chart"></div>
+        <div class="card-title">Pace trend</div>
+        <div class="card-sub">Every run in this block. Faster is higher. The aim is for this everyday pace to reach 5:30/km.</div>
+        <div id="easy-pace-chart"></div>
       </article>
     </section>
 
     <section class="section" aria-labelledby="log-title">
       <div class="section-head">
         <div><div class="kicker">Selected period</div><h2 id="log-title">Run log</h2></div>
-        <div class="section-note" id="log-note"></div>
+        <div class="section-note" id="log-note">Select a run to see pace, heart rate, and form kilometre by kilometre.</div>
       </div>
       <div class="card table-wrap">
         <table>
@@ -428,6 +464,28 @@
       </div>
     </section>
   </main>
+
+  <div id="run-sheet" class="run-sheet" hidden>
+    <div class="run-sheet-backdrop" id="run-sheet-backdrop"></div>
+    <div class="run-sheet-panel" role="dialog" aria-modal="true" aria-labelledby="run-sheet-title">
+      <div class="run-sheet-top">
+        <div>
+          <div class="run-sheet-kicker">Run history</div>
+          <h3 id="run-sheet-title">Run</h3>
+          <div class="run-sheet-meta" id="run-sheet-meta"></div>
+        </div>
+        <button class="run-close" id="run-sheet-close" type="button">Close</button>
+      </div>
+      <div class="run-insight" id="run-sheet-insight"></div>
+      <div id="run-sheet-charts"></div>
+      <div class="card-title" style="margin-top:22px">That morning</div>
+      <div class="card-sub">Sleep, HRV, and readiness recorded for this date. Blank means the watch did not store it.</div>
+      <div class="run-facts" id="run-sheet-morning"></div>
+      <div class="card-title" style="margin-top:22px">Similar distance</div>
+      <div class="card-sub" id="run-sheet-similar-note">Recent runs close in distance, newest first.</div>
+      <div class="card table-wrap"><table class="run-compare" id="run-sheet-similar"></table></div>
+    </div>
+  </div>
 
   <footer>
     <span>Personal Garmin dashboard · generated locally · no AI required</span>
@@ -574,6 +632,16 @@ function startDashboard(DATA) {
       bar.setAttribute('width', width); bar.setAttribute('height', Math.max(1, H - bottom - y(week.km)));
       bar.setAttribute('rx', 4); bar.setAttribute('fill', i === weekly.length - 1 ? 'var(--lime)' : 'var(--blue)');
       svg.appendChild(bar);
+      if (week.long > 0) {
+        const mark = document.createElementNS(svg.namespaceURI, 'circle');
+        mark.setAttribute('cx', x + width - 1);
+        mark.setAttribute('cy', y(Math.min(week.long, week.km)));
+        mark.setAttribute('r', 4);
+        mark.setAttribute('fill', 'var(--ink)');
+        mark.setAttribute('stroke', 'var(--surface)');
+        mark.setAttribute('stroke-width', 1.5);
+        svg.appendChild(mark);
+      }
       if (i % 2 === 0 || i === weekly.length - 1) {
         const label = document.createElementNS(svg.namespaceURI, 'text');
         label.setAttribute('x', x + width / 2); label.setAttribute('y', H - 6);
@@ -583,8 +651,8 @@ function startDashboard(DATA) {
     });
     host.appendChild(svg);
     const caption = el('div', 'chart-caption');
-    caption.appendChild(el('span', null, weekly.length + ' weeks shown'));
-    caption.appendChild(el('span', 'mono', 'Latest ' + weekly[weekly.length - 1].km.toFixed(1) + ' km'));
+    caption.appendChild(el('span', null, 'Dot = longest run'));
+    caption.appendChild(el('span', 'mono', 'Latest week ' + weekly[weekly.length - 1].km.toFixed(1) + ' km'));
     host.appendChild(caption);
   }
 
@@ -596,6 +664,11 @@ function startDashboard(DATA) {
       host.appendChild(el('div', 'card-sub', 'No heart-rate zone data in this period.'));
       return;
     }
+    const easyPct = 100 * bands[0] / total;
+    const share = el('div', 'easy-share');
+    share.appendChild(el('div', 'easy-share-value mono', easyPct.toFixed(0) + '%'));
+    share.appendChild(el('div', 'easy-share-label', 'of this period was easy. Most minutes should live here.'));
+    host.appendChild(share);
     const colors = ['var(--teal)', 'var(--orange)', 'var(--rose)'];
     const labels = ['Easy · Z1–2', 'Moderate · Z3', 'Hard · Z4–5'];
     const track = el('div', 'zone-track');
@@ -826,6 +899,248 @@ function startDashboard(DATA) {
     host.appendChild(caption);
   }
 
+  function renderEasyPace() {
+    const host = $('easy-pace-chart');
+    const target = 5.5;
+    const rows = DATA.runs.filter(run => run.in_block && run.trend_eligible && run.pace && run.pace >= target - 0.25);
+    if (rows.length < 2) { host.appendChild(el('div', 'card-sub', 'Not enough runs yet to show a pace trend.')); return; }
+    const values = rows.map(run => run.pace);
+    const n = values.length;
+    const xMean = (n - 1) / 2;
+    const yMean = average(values);
+    let num = 0, den = 0;
+    values.forEach((pace, i) => {
+      num += (i - xMean) * (pace - yMean);
+      den += (i - xMean) * (i - xMean);
+    });
+    const slope = den ? num / den : 0;
+    const trendStart = yMean - slope * xMean;
+    const trendEnd = trendStart + slope * (n - 1);
+    const W = 1120, H = 230, left = 42, right = 16, top = 18, bottom = 28;
+    let min = target - 0.45;
+    let max = Math.max(...values) + 0.3;
+    const targetVisible = true;
+    const x = i => left + i * ((W - left - right) / (n - 1));
+    const y = value => top + (value - min) / (max - min) * (H - top - bottom);
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('class', 'chart');
+    svg.setAttribute('role', 'img'); svg.setAttribute('aria-label', 'Running pace trend, faster toward the top, with a 5:30 target');
+    [0, .5, 1].forEach(ratio => {
+      const gy = top + ratio * (H - top - bottom);
+      const line = document.createElementNS(svg.namespaceURI, 'line');
+      [['x1', left], ['x2', W - right], ['y1', gy], ['y2', gy], ['class', 'grid-line']].forEach(([k, v]) => line.setAttribute(k, v));
+      svg.appendChild(line);
+      const label = document.createElementNS(svg.namespaceURI, 'text');
+      label.setAttribute('x', 0); label.setAttribute('y', gy + 3); label.setAttribute('class', 'axis-label');
+      label.textContent = fmtPace(min + ratio * (max - min)); svg.appendChild(label);
+    });
+    if (targetVisible) {
+      const guide = document.createElementNS(svg.namespaceURI, 'line');
+      [['x1', left], ['x2', W - right], ['y1', y(target)], ['y2', y(target)]].forEach(([k, v]) => guide.setAttribute(k, v));
+      guide.setAttribute('stroke', 'var(--lime)');
+      guide.setAttribute('stroke-width', 1.5);
+      guide.setAttribute('stroke-dasharray', '5 5');
+      svg.appendChild(guide);
+      const guideLabel = document.createElementNS(svg.namespaceURI, 'text');
+      guideLabel.setAttribute('x', W - right); guideLabel.setAttribute('y', y(target) - 6);
+      guideLabel.setAttribute('text-anchor', 'end'); guideLabel.setAttribute('class', 'axis-label');
+      guideLabel.textContent = '5:30'; svg.appendChild(guideLabel);
+    }
+    const trend = document.createElementNS(svg.namespaceURI, 'path');
+    trend.setAttribute('d', `M ${x(0).toFixed(1)} ${y(trendStart).toFixed(1)} L ${x(n - 1).toFixed(1)} ${y(trendEnd).toFixed(1)}`);
+    trend.setAttribute('fill', 'none'); trend.setAttribute('stroke', 'var(--lime)');
+    trend.setAttribute('stroke-width', 2); trend.setAttribute('stroke-linecap', 'round');
+    svg.appendChild(trend);
+    const path = document.createElementNS(svg.namespaceURI, 'path');
+    path.setAttribute('d', rows.map((row, i) => `${i ? 'L' : 'M'} ${x(i).toFixed(1)} ${y(row.pace).toFixed(1)}`).join(' '));
+    path.setAttribute('class', 'trend-line'); path.setAttribute('stroke', 'var(--teal)'); path.setAttribute('opacity', '0.45');
+    svg.appendChild(path);
+    rows.forEach((row, i) => {
+      const circle = document.createElementNS(svg.namespaceURI, 'circle');
+      circle.setAttribute('cx', x(i)); circle.setAttribute('cy', y(row.pace));
+      circle.setAttribute('r', i === n - 1 ? 6 : 2.6);
+      circle.setAttribute('fill', i === n - 1 ? 'var(--lime)' : 'var(--teal)');
+      svg.appendChild(circle);
+    });
+    host.appendChild(svg);
+    const gained = Math.round((trendStart - trendEnd) * 60);
+    const gap = Math.round((values[n - 1] - target) * 60);
+    const direction = gained > 3 ? `${gained} sec/km faster across the block`
+      : gained < -3 ? `${Math.abs(gained)} sec/km slower across the block`
+      : 'Pace is roughly flat across the block';
+    const caption = el('div', 'chart-caption');
+    caption.appendChild(el('span', null, direction + ' · line is the trend'));
+    caption.appendChild(el('span', 'mono', `Latest ${fmtPace(values[n - 1])}/km · ${gap > 0 ? gap + ' sec from 5:30' : 'at 5:30'}`));
+    host.appendChild(caption);
+  }
+
+  function usefulLaps(run) {
+    return (run.laps || []).filter(lap => lap.pace && lap.distance_km >= 0.4);
+  }
+
+  function runInsight(run) {
+    const laps = usefulLaps(run);
+    if (laps.length < 2) return 'This run does not have enough splits to show how it unfolded.';
+    const half = Math.floor(laps.length / 2);
+    const avgField = (rows, field) => average(rows.map(row => row[field]).filter(value => value != null));
+    const paceDelta = avgField(laps.slice(half), 'pace') - avgField(laps.slice(0, half), 'pace');
+    const hrFront = avgField(laps.slice(0, half), 'avg_hr');
+    const hrBack = avgField(laps.slice(half), 'avg_hr');
+    const hrDelta = hrFront != null && hrBack != null ? hrBack - hrFront : null;
+    const paceSecs = Math.abs(Math.round(paceDelta * 60));
+    let text;
+    if (hrDelta != null && paceDelta > 0.05 && hrDelta > 3) {
+      text = `The back half slowed by ${paceSecs} sec/km while heart rate rose ${Math.round(hrDelta)} bpm. The pace got more expensive.`;
+    } else if (hrDelta != null && Math.abs(paceDelta) <= 0.05 && hrDelta > 4) {
+      text = `Pace held, but heart rate climbed ${Math.round(hrDelta)} bpm in the back half. Same speed, higher cost.`;
+    } else if (paceDelta < -0.08 && hrDelta != null && hrDelta > 6) {
+      text = `The finish was ${paceSecs} sec/km faster and heart rate jumped ${Math.round(hrDelta)} bpm. That ending was a surge.`;
+    } else if (paceDelta < -0.05) {
+      text = `The back half was ${paceSecs} sec/km faster than the front.`;
+    } else {
+      text = hrDelta == null
+        ? 'Pace stayed even across the run.'
+        : `Pace stayed even, with heart rate ${hrDelta >= 0 ? 'up' : 'down'} ${Math.abs(Math.round(hrDelta))} bpm in the back half.`;
+    }
+    let jump = null;
+    for (let i = 1; i < laps.length; i++) {
+      if (laps[i].avg_hr == null || laps[i - 1].avg_hr == null) continue;
+      const rise = laps[i].avg_hr - laps[i - 1].avg_hr;
+      if (!jump || rise > jump.rise) jump = { rise, lap: laps[i].lap };
+    }
+    if (jump && jump.rise >= 5) text += ` The sharpest heart-rate rise was +${Math.round(jump.rise)} bpm into km ${jump.lap}.`;
+    return text;
+  }
+
+  function splitChart(points, field, options) {
+    const usable = points.filter(point => point[field] != null);
+    if (usable.length < 2) return null;
+    const { color, aria, format, invert } = options;
+    const W = 680, H = 180, left = 42, right = 10, top = 16, bottom = 26;
+    const values = usable.map(point => point[field]);
+    let min = Math.min(...values), max = Math.max(...values);
+    const pad = (max - min || 1) * .15;
+    min -= pad; max += pad;
+    const x = i => left + (usable.length === 1 ? 0 : i * ((W - left - right) / (usable.length - 1)));
+    const y = value => invert
+      ? top + (value - min) / (max - min) * (H - top - bottom)
+      : top + (max - value) / (max - min) * (H - top - bottom);
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('class', 'chart');
+    svg.setAttribute('role', 'img'); svg.setAttribute('aria-label', aria);
+    [0, 1].forEach(ratio => {
+      const gy = top + ratio * (H - top - bottom);
+      const line = document.createElementNS(svg.namespaceURI, 'line');
+      [['x1', left], ['x2', W - right], ['y1', gy], ['y2', gy], ['class', 'grid-line']].forEach(([k, v]) => line.setAttribute(k, v));
+      svg.appendChild(line);
+      const label = document.createElementNS(svg.namespaceURI, 'text');
+      label.setAttribute('x', 0); label.setAttribute('y', gy + 3); label.setAttribute('class', 'axis-label');
+      const axisValue = invert ? min + ratio * (max - min) : max - ratio * (max - min);
+      label.textContent = format(axisValue); svg.appendChild(label);
+    });
+    const path = document.createElementNS(svg.namespaceURI, 'path');
+    path.setAttribute('d', usable.map((point, i) => `${i ? 'L' : 'M'} ${x(i).toFixed(1)} ${y(point[field]).toFixed(1)}`).join(' '));
+    path.setAttribute('class', 'trend-line'); path.setAttribute('stroke', color); svg.appendChild(path);
+    usable.forEach((point, i) => {
+      const dot = document.createElementNS(svg.namespaceURI, 'circle');
+      dot.setAttribute('cx', x(i)); dot.setAttribute('cy', y(point[field])); dot.setAttribute('r', 3.5);
+      dot.setAttribute('fill', 'var(--surface)'); dot.setAttribute('stroke', color); dot.setAttribute('stroke-width', 2);
+      svg.appendChild(dot);
+      if (usable.length <= 14 || i % 2 === 0 || i === usable.length - 1) {
+        const label = document.createElementNS(svg.namespaceURI, 'text');
+        label.setAttribute('x', x(i)); label.setAttribute('y', H - 4); label.setAttribute('text-anchor', 'middle'); label.setAttribute('class', 'axis-label');
+        label.textContent = point.lap; svg.appendChild(label);
+      }
+    });
+    return svg;
+  }
+
+  function addSplitCard(host, title, sub, chart) {
+    const card = el('article', 'card');
+    card.style.marginTop = '12px';
+    card.appendChild(el('div', 'card-title', title));
+    card.appendChild(el('div', 'card-sub', sub));
+    if (chart) card.appendChild(chart);
+    else card.appendChild(el('div', 'card-sub', 'Not recorded on this run.'));
+    host.appendChild(card);
+  }
+
+  function fact(label, value) {
+    const node = el('div', 'run-fact');
+    node.appendChild(el('div', 'label', label));
+    node.appendChild(el('div', 'value mono', value));
+    return node;
+  }
+
+  function openRun(run) {
+    $('run-sheet-title').textContent = run.name || 'Run';
+    $('run-sheet-meta').textContent = `${shortDate(run.date)} · ${run.dist_km.toFixed(2)} km · ${run.pace_str}/km · ${run.avg_hr ? Math.round(run.avg_hr) + ' bpm' : 'no heart rate'}`;
+    $('run-sheet-insight').textContent = runInsight(run);
+    const charts = $('run-sheet-charts');
+    charts.innerHTML = '';
+    const laps = usefulLaps(run);
+    addSplitCard(charts, 'Pace by kilometre', 'Faster is higher on the chart.', splitChart(laps, 'pace', {
+      color: 'var(--blue)', aria: 'Pace by kilometre', invert: true, format: value => fmtPace(value)
+    }));
+    addSplitCard(charts, 'Heart rate by kilometre', 'A rising line at the same pace means the run got more expensive.', splitChart(laps, 'avg_hr', {
+      color: 'var(--rose)', aria: 'Heart rate by kilometre', invert: false, format: value => Math.round(value).toString()
+    }));
+    addSplitCard(charts, 'Cadence by kilometre', 'Look for a drop in the back half.', splitChart(laps, 'cadence', {
+      color: 'var(--teal)', aria: 'Cadence by kilometre', invert: false, format: value => Math.round(value).toString()
+    }));
+    addSplitCard(charts, 'Ground contact by kilometre', 'Lower is lighter. A late rise means form got heavier.', splitChart(laps, 'gct', {
+      color: 'var(--orange)', aria: 'Ground contact by kilometre', invert: true, format: value => Math.round(value).toString()
+    }));
+
+    const morning = (DATA.wellness || []).find(day => day.date === run.date) || {};
+    const morningHost = $('run-sheet-morning');
+    morningHost.innerHTML = '';
+    [
+      ['Sleep', morning.sleep_score != null ? morning.sleep_score.toFixed(0) : '–'],
+      ['HRV', morning.hrv != null ? Math.round(morning.hrv) + ' ms' : '–'],
+      ['Readiness', morning.readiness != null ? morning.readiness.toFixed(0) : '–']
+    ].forEach(([label, value]) => morningHost.appendChild(fact(label, value)));
+
+    const peers = DATA.runs.filter(other =>
+      other.datetime < run.datetime && other.pace &&
+      Math.abs(other.dist_km - run.dist_km) <= Math.max(1.5, run.dist_km * 0.2)
+    ).slice(-5).reverse();
+    const table = $('run-sheet-similar');
+    table.innerHTML = '';
+    const head = document.createElement('tr');
+    ['Date', 'Distance', 'Pace', 'HR', 'Cadence', 'Today vs that run'].forEach((label, index) => {
+      head.appendChild(el('th', index ? 'num' : '', label));
+    });
+    const thead = document.createElement('thead');
+    thead.appendChild(head);
+    table.appendChild(thead);
+    const body = document.createElement('tbody');
+    const thisRow = document.createElement('tr');
+    [shortDate(run.date), run.dist_km.toFixed(1) + ' km', run.pace_str, run.avg_hr ? Math.round(run.avg_hr) : '–', run.cadence ? run.cadence.toFixed(0) : '–', 'This run']
+      .forEach((value, index) => thisRow.appendChild(el('td', index ? 'num mono' : '', value)));
+    body.appendChild(thisRow);
+    peers.forEach(other => {
+      const row = document.createElement('tr');
+      const paceDelta = other.pace && run.pace ? Math.round((run.pace - other.pace) * 60) : null;
+      const versus = paceDelta == null ? '–' : paceDelta === 0 ? 'Same pace' : `${Math.abs(paceDelta)}s ${paceDelta > 0 ? 'slower' : 'faster'}`;
+      [shortDate(other.date), other.dist_km.toFixed(1) + ' km', other.pace_str, other.avg_hr ? Math.round(other.avg_hr) : '–', other.cadence ? other.cadence.toFixed(0) : '–', versus]
+        .forEach((value, index) => row.appendChild(el('td', index ? 'num mono' : '', value)));
+      body.appendChild(row);
+    });
+    table.appendChild(body);
+    $('run-sheet-similar-note').textContent = peers.length
+      ? 'This run is the first row. The last column says whether today was faster or slower than that earlier run.'
+      : 'No earlier run was close enough in distance to compare.';
+    $('run-sheet').hidden = false;
+    document.body.style.overflow = 'hidden';
+    $('run-sheet-close').focus();
+  }
+
+  function closeRun() {
+    $('run-sheet').hidden = true;
+    document.body.style.overflow = '';
+  }
+
   function renderLaps() {
     const host = $('lap-chart'), laps = (LATEST.laps || []).filter(lap => lap.cadence != null);
     if (laps.length < 2) { host.appendChild(el('div', 'card-sub', 'No lap-level cadence recorded.')); return; }
@@ -866,9 +1181,17 @@ function startDashboard(DATA) {
   function renderLog(rows) {
     const host = $('log-body'); host.innerHTML = '';
     const sorted = rows.slice().sort((a,b)=>b.datetime.localeCompare(a.datetime));
-    $('log-note').textContent = `${sorted.length} runs in the selected period.`;
-    sorted.forEach((run,index)=>{
+    $('log-note').textContent = `${sorted.length} runs in the selected period. Select one to see how it unfolded.`;
+    sorted.forEach(run => {
       const tr=document.createElement('tr'), date=el('td',null,shortDate(run.date));
+      tr.className = 'run-row';
+      tr.tabIndex = 0;
+      tr.setAttribute('role', 'button');
+      tr.setAttribute('aria-label', `Open run on ${shortDate(run.date)}`);
+      tr.addEventListener('click', () => openRun(run));
+      tr.addEventListener('keydown', event => {
+        if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openRun(run); }
+      });
       if(run.datetime===LATEST.datetime) date.appendChild(el('span','latest-tag','latest'));
       tr.appendChild(date);
       [
@@ -889,8 +1212,14 @@ function startDashboard(DATA) {
   $('cadence-latest').textContent = LATEST.cadence ? LATEST.cadence.toFixed(1) + ' spm' : '–';
   renderTrend('cadence-chart','cadence',0,'spm','var(--blue)','Cadence over the current block');
   renderTrend('efficiency-chart','efficiency',2,'m/beat','var(--teal)','Aerobic efficiency over the current block');
-  renderLaps();
+  renderEasyPace();
   renderHero();
+  $('open-latest').addEventListener('click', () => openRun(LATEST));
+  $('run-sheet-close').addEventListener('click', closeRun);
+  $('run-sheet-backdrop').addEventListener('click', closeRun);
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && !$('run-sheet').hidden) closeRun();
+  });
 
   document.querySelectorAll('.periods button').forEach(button => button.addEventListener('click', () => {
     activePeriod = button.dataset.period;
