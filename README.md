@@ -79,6 +79,27 @@ Useful options:
 This workflow runs entirely on your Mac and does not call Claude or consume
 AI tokens. If the cached Garmin session expires, run `login_setup.py` again.
 
+### Grok CLI (live Garmin, no dashboard refresh)
+
+Grok does not read the dashboard HTML. It talks to Garmin Connect through an
+MCP server, so a question like "am I ready for a tempo today?" pulls sleep,
+HRV, VO2, and recent runs on demand. You do not need to run
+`Refresh Garmin Dashboard.command` first.
+
+Do this once:
+
+1. Double-click `Connect Garmin to Grok.command` and complete Garmin MFA in
+   Terminal. Tokens are saved in `garmin_tokens/` (never in Grok config).
+2. Open Grok CLI (`grok`) and ask about your training.
+
+After that, Grok queries Garmin live whenever you ask. The Garmin session
+renews itself for months. Re-run `Connect Garmin to Grok.command` only if
+Grok says the Garmin session expired.
+
+The dashboard command is still the one-click path for the local HTML file and
+the encrypted iPhone GitHub Pages site. Those stay a snapshot until you
+refresh them.
+
 ### Encrypted iPhone website
 
 The `docs/` directory is the GitHub Pages version of Run Atlas. Its application
@@ -159,6 +180,7 @@ python3 fetch_activities.py --days 3650 --wellness-days 30
 - `fetch_activities.py` -- pulls runs + wellness data (run by you when you want fresh data)
 - `refresh_dashboard.py` -- fetches, merges, rebuilds, validates, and opens the dashboard without AI
 - `Refresh Garmin Dashboard.command` -- double-clickable macOS refresh launcher
+- `Connect Garmin to Grok.command` -- one-time Garmin login so Grok CLI can query Connect live
 - `publish_dashboard.py` -- encrypts dashboard data and publishes the Pages build
 - `Set Up Encrypted Dashboard.command` -- one-time local password and Keychain setup
 - `docs/` -- public GitHub Pages shell plus encrypted dashboard data
