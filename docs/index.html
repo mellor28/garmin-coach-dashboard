@@ -442,7 +442,7 @@
       </div>
       <article class="card" style="margin-top:12px">
         <div class="card-title">Pace trend</div>
-        <div class="card-sub">Every run in this block. Faster is higher. The aim is for this everyday pace to reach 5:30/km.</div>
+        <div class="card-sub">Every run in this block. Faster is higher. The line shows whether everyday pace is coming down.</div>
         <div id="easy-pace-chart"></div>
       </article>
     </section>
@@ -901,9 +901,12 @@ function startDashboard(DATA) {
 
   function renderEasyPace() {
     const host = $('easy-pace-chart');
-    const target = 5.5;
-    const rows = DATA.runs.filter(run => run.in_block && run.trend_eligible && run.pace && run.pace >= target - 0.25);
-    if (rows.length < 2) { host.appendChild(el('div', 'card-sub', 'Not enough runs yet to show a pace trend.')); return; }
+    const pool = DATA.runs.filter(run => run.in_block && run.trend_eligible && run.pace);
+    if (pool.length < 2) { host.appendChild(el('div', 'card-sub', 'Not enough runs yet to show a pace trend.')); return; }
+    const sorted = pool.map(run => run.pace).slice().sort((a, b) => a - b);
+    const mid = sorted[Math.floor(sorted.length / 2)];
+    const kept = pool.filter(run => run.pace > mid - 1.25);
+    const rows = kept.length >= 2 ? kept : pool;
     const values = rows.map(run => run.pace);
     const n = values.length;
     const xMean = (n - 1) / 2;
@@ -917,14 +920,14 @@ function startDashboard(DATA) {
     const trendStart = yMean - slope * xMean;
     const trendEnd = trendStart + slope * (n - 1);
     const W = 1120, H = 230, left = 42, right = 16, top = 18, bottom = 28;
-    let min = target - 0.45;
-    let max = Math.max(...values) + 0.3;
-    const targetVisible = true;
+    let min = Math.min(...values), max = Math.max(...values);
+    const pad = Math.max(0.12, (max - min) * 0.18);
+    min -= pad; max += pad;
     const x = i => left + i * ((W - left - right) / (n - 1));
     const y = value => top + (value - min) / (max - min) * (H - top - bottom);
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('class', 'chart');
-    svg.setAttribute('role', 'img'); svg.setAttribute('aria-label', 'Running pace trend, faster toward the top, with a 5:30 target');
+    svg.setAttribute('role', 'img'); svg.setAttribute('aria-label', 'Running pace trend, faster toward the top');
     [0, .5, 1].forEach(ratio => {
       const gy = top + ratio * (H - top - bottom);
       const line = document.createElementNS(svg.namespaceURI, 'line');
@@ -934,18 +937,6 @@ function startDashboard(DATA) {
       label.setAttribute('x', 0); label.setAttribute('y', gy + 3); label.setAttribute('class', 'axis-label');
       label.textContent = fmtPace(min + ratio * (max - min)); svg.appendChild(label);
     });
-    if (targetVisible) {
-      const guide = document.createElementNS(svg.namespaceURI, 'line');
-      [['x1', left], ['x2', W - right], ['y1', y(target)], ['y2', y(target)]].forEach(([k, v]) => guide.setAttribute(k, v));
-      guide.setAttribute('stroke', 'var(--lime)');
-      guide.setAttribute('stroke-width', 1.5);
-      guide.setAttribute('stroke-dasharray', '5 5');
-      svg.appendChild(guide);
-      const guideLabel = document.createElementNS(svg.namespaceURI, 'text');
-      guideLabel.setAttribute('x', W - right); guideLabel.setAttribute('y', y(target) - 6);
-      guideLabel.setAttribute('text-anchor', 'end'); guideLabel.setAttribute('class', 'axis-label');
-      guideLabel.textContent = '5:30'; svg.appendChild(guideLabel);
-    }
     const trend = document.createElementNS(svg.namespaceURI, 'path');
     trend.setAttribute('d', `M ${x(0).toFixed(1)} ${y(trendStart).toFixed(1)} L ${x(n - 1).toFixed(1)} ${y(trendEnd).toFixed(1)}`);
     trend.setAttribute('fill', 'none'); trend.setAttribute('stroke', 'var(--lime)');
@@ -964,13 +955,12 @@ function startDashboard(DATA) {
     });
     host.appendChild(svg);
     const gained = Math.round((trendStart - trendEnd) * 60);
-    const gap = Math.round((values[n - 1] - target) * 60);
     const direction = gained > 3 ? `${gained} sec/km faster across the block`
       : gained < -3 ? `${Math.abs(gained)} sec/km slower across the block`
       : 'Pace is roughly flat across the block';
     const caption = el('div', 'chart-caption');
     caption.appendChild(el('span', null, direction + ' · line is the trend'));
-    caption.appendChild(el('span', 'mono', `Latest ${fmtPace(values[n - 1])}/km · ${gap > 0 ? gap + ' sec from 5:30' : 'at 5:30'}`));
+    caption.appendChild(el('span', 'mono', `Latest ${fmtPace(values[n - 1])}/km`));
     host.appendChild(caption);
   }
 
