@@ -185,6 +185,24 @@
   }
   .vo2-reading strong { font-size: 62px; line-height: 1; font-weight: 530; letter-spacing: -.055em; }
   .vo2-reading span { margin-top: 12px; font-size: 18px; }
+  .long-card {
+    display: grid; grid-template-columns: minmax(180px, .4fr) minmax(0, 1.6fr);
+    gap: clamp(20px, 4vw, 48px); align-items: center;
+  }
+  .long-kicker { color: var(--muted); font-size: 12px; }
+  .long-distance {
+    display: flex; align-items: end; gap: 8px; margin: 8px 0 6px;
+    font-size: clamp(56px, 8vw, 84px); line-height: .8; font-weight: 720; letter-spacing: -.06em;
+  }
+  .long-distance span { padding-bottom: .12em; font-size: 18px; letter-spacing: 0; color: var(--muted); font-weight: 560; }
+  .long-status { font-size: clamp(22px, 3vw, 32px); letter-spacing: -.04em; line-height: 1.05; }
+  .long-note { margin-top: 10px; color: var(--muted); font-size: 13px; }
+  .long-road { display: block; width: 100%; height: auto; overflow: visible; }
+  .long-road-base { fill: var(--surface-2); }
+  .long-road-fill { }
+  .long-tick { stroke: var(--faint); stroke-width: 1.5; }
+  .long-tick-label { fill: var(--faint); font-size: 11px; }
+
   .vo2-title { display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: 12px; }
   .vo2-title-mark { color: var(--teal); font-size: 18px; }
   .vo2-context h3 { margin: 10px 0 8px; font-size: clamp(25px, 3vw, 36px); letter-spacing: -.045em; }
@@ -274,7 +292,7 @@
   footer { display: flex; justify-content: space-between; gap: 20px; margin-top: 50px; color: var(--faint); font-size: 9px; line-height: 1.5; }
 
   @media (max-width: 900px) {
-    .hero-grid, .vo2-card, .latest-card { grid-template-columns: 1fr; }
+    .hero-grid, .vo2-card, .latest-card, .long-card { grid-template-columns: 1fr; }
     .hero-aside { max-width: 520px; }
     .recovery-grid { grid-template-columns: repeat(3, 1fr); }
     .economy-grid { grid-template-columns: repeat(2, 1fr); }
@@ -389,6 +407,22 @@
           <div class="vo2-copy" id="vo2-copy"></div>
           <div class="vo2-facts" id="vo2-facts"></div>
         </div>
+      </article>
+    </section>
+
+    <section class="section" aria-labelledby="long-title">
+      <div class="section-head">
+        <div><div class="kicker">One continuous run</div><h2 id="long-title">Half marathon distance</h2></div>
+        <div class="section-note">The road is 21.1 km. The marker is the furthest you have gone in a single run.</div>
+      </div>
+      <article class="card long-card">
+        <div>
+          <div class="long-kicker">Longest single run</div>
+          <div class="long-distance mono"><b id="long-km">–</b><span>km</span></div>
+          <div class="long-status" id="long-status">Building</div>
+          <div class="long-note" id="long-note"></div>
+        </div>
+        <svg class="long-road" id="long-road" viewBox="0 0 680 150" role="img" aria-label="Progress of the longest run toward 21.1 kilometres"></svg>
       </article>
     </section>
 
@@ -781,6 +815,62 @@ function startDashboard(DATA) {
     const pace = paceDelta != null ? ` Pace was ${Math.abs(paceDelta * 60).toFixed(0)} sec/km ${paceDelta > 0 ? 'slower' : 'faster'} than the prior run.` : '';
     const finish = LATEST.decoupling != null ? ` Back-half pace change: ${signed(LATEST.decoupling, 1)}%.` : '';
     return opening + pace + ' Read these together rather than chasing turnover alone.' + finish;
+  }
+
+  function renderLongRun() {
+    const HALF = 21.1;
+    const road = $('long-road');
+    const runs = DATA.runs.filter(run => run.in_block && run.dist_km);
+    if (!runs.length) {
+      $('long-km').textContent = '–';
+      $('long-status').textContent = 'No runs yet';
+      return;
+    }
+    const longest = runs.reduce((best, run) => {
+      if (run.dist_km > best.dist_km + 0.05) return run;
+      if (Math.abs(run.dist_km - best.dist_km) <= 0.05 && run.datetime > best.datetime) return run;
+      return best;
+    });
+    const covered = Math.min(longest.dist_km, HALF);
+    const done = longest.dist_km >= HALF - 0.05;
+    const laps = (longest.laps || []).filter(lap => lap.avg_hr != null && lap.distance_km >= 0.4);
+    let body = 'unknown';
+    if (laps.length >= 4) {
+      const half = Math.floor(laps.length / 2);
+      const mean = rows => average(rows.map(lap => lap.avg_hr));
+      const rise = mean(laps.slice(half)) - mean(laps.slice(0, half));
+      body = rise >= 8 ? 'hot' : 'calm';
+    }
+    const color = body === 'hot' ? 'var(--orange)' : 'var(--teal)';
+    $('long-km').textContent = longest.dist_km.toFixed(1);
+    $('long-status').textContent = done ? 'Distance covered' : 'Still short of 21.1';
+    const phrase = body === 'hot' ? 'heart rate climbed in the second half'
+      : body === 'calm' ? 'finish stayed calm'
+      : 'heart-rate splits were not recorded';
+    $('long-note').textContent = `${shortDate(longest.date)} · ${phrase}`;
+
+    const ns = road.namespaceURI;
+    const x0 = 16, x1 = 664, y = 62, h = 28;
+    const span = x1 - x0;
+    const at = km => x0 + span * (km / HALF);
+    const fillW = Math.max(h, span * (covered / HALF));
+    const add = (tag, attrs) => {
+      const node = document.createElementNS(ns, tag);
+      Object.entries(attrs).forEach(([key, value]) => node.setAttribute(key, value));
+      road.appendChild(node);
+      return node;
+    };
+    add('rect', { x: x0, y: y - h / 2, width: span, height: h, rx: h / 2, class: 'long-road-base' });
+    add('rect', { x: x0, y: y - h / 2, width: fillW, height: h, rx: h / 2, fill: color });
+    [10, 15, 21.1].forEach(km => {
+      const x = at(km);
+      add('line', { x1: x, x2: x, y1: y + h / 2 + 10, y2: y + h / 2 + 18, class: 'long-tick' });
+      const label = add('text', { x, y: y + h / 2 + 36, 'text-anchor': 'middle', class: 'long-tick-label' });
+      label.textContent = km === 21.1 ? '21.1' : String(km);
+    });
+    const markerX = x0 + fillW - h / 2;
+    add('circle', { cx: markerX, cy: y, r: 16, fill: color, stroke: 'var(--surface)', 'stroke-width': 4 });
+    add('circle', { cx: markerX, cy: y, r: 5, fill: 'var(--surface)' });
   }
 
   function renderLatest() {
@@ -1197,6 +1287,7 @@ function startDashboard(DATA) {
   $('updated').textContent = `Data through ${shortDate(LATEST.date)} · ${DATA.runs.length} runs stored`;
   renderWeekly();
   renderVo2();
+  renderLongRun();
   renderLatest();
   renderRecovery();
   $('cadence-latest').textContent = LATEST.cadence ? LATEST.cadence.toFixed(1) + ' spm' : '–';
